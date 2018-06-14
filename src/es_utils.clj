@@ -104,3 +104,19 @@
     (if (seq (:failures resp))
       (log/errorf "Failed to delete all docs: %s" resp)
       (log/infof "Deleted all documents from indices '%s'." indices))))
+
+(defn export-docs-for-bulk-via-http
+  "Example: (export-docs-for-bulk \"http://127.0.0.1:9200\" \"index\" {:query {:match_all {}} :size 1000} \"output.json\")"
+  [es-host index-name query out-file]
+  (let [op (fn [hit] {"index" {"_index" (:_index hit) "_type" (:_type hit) "_id" (:_id hit)}})]
+    (try
+      (let [hits (-> @(http/request {:url     (format "%s/%s/_search" es-host index-name)
+                                     :method  :post
+                                     :headers {"Content-Type" "application/json; charset=UTF-8"}
+                                     :body    (cheshire/encode query)})
+                     :body (cheshire/decode true) :hits :hits)
+            ops (reduce #(conj %1 (op %2) (:_source %2)) [] hits)]
+        (doseq [line ops]
+          (spit out-file (str (cheshire/encode line) "\n") :append true)))
+      (catch Exception e
+        (log/errorf "ES export failed '%s' with exception %s" query e)))))

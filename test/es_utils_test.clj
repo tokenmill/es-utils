@@ -1,4 +1,4 @@
-(ns es-utils
+(ns es-utils-test
   (:require [clojure.test :refer :all]))
 
 (deftest main-test
