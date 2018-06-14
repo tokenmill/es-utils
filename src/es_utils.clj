@@ -99,9 +99,8 @@
                                        es-host indices)
                  :method       :post
                  :body         (cheshire/encode {:query {:match_all {}}})
-                 :content-type :json
-                 :accept       :json})]
-    (if (seq (:failures resp))
+                 :headers {"Content-Type" "application/json; charset=UTF-8"}})]
+    (if (or (seq (:failures resp)) (not= 200 (:status resp)))
       (log/errorf "Failed to delete all docs: %s" resp)
       (log/infof "Deleted all documents from indices '%s'." indices))))
 
