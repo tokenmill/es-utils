@@ -94,7 +94,7 @@
 
 (defn delete-all-docs [es-host es-index-confs]
   (if (empty? es-index-confs)
-    (log/infof "No docs deleted because ES conf is empty.")
+    (log/infof "No docs deleted because the ES index conf map is empty.")
     (let [indices (->> es-index-confs (map (fn [[_ {:keys [alias]}]] alias)) (str/join ","))
           resp @(http/request
                   {:url          (format "%s/%s/_delete_by_query?refresh&wait_for_completion=true"
