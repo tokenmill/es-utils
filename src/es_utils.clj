@@ -93,16 +93,18 @@
       (import-test-data-to-es es-host (or (get env k) alias) data))))
 
 (defn delete-all-docs [es-host es-index-confs]
-  (let [indices (->> es-index-confs (map (fn [[_ {:keys [alias]}]] alias)) (str/join ","))
-        resp @(http/request
-                {:url          (format "%s/%s/_delete_by_query?refresh&wait_for_completion=true"
-                                       es-host indices)
-                 :method       :post
-                 :body         (cheshire/encode {:query {:match_all {}}})
-                 :headers {"Content-Type" "application/json; charset=UTF-8"}})]
-    (if (or (seq (:failures resp)) (not= 200 (:status resp)))
-      (log/errorf "Failed to delete all docs: %s" resp)
-      (log/infof "Deleted all documents from indices '%s'." indices))))
+  (if (empty? es-index-confs)
+    (log/infof "No docs deleted because ES conf is empty.")
+    (let [indices (->> es-index-confs (map (fn [[_ {:keys [alias]}]] alias)) (str/join ","))
+          resp @(http/request
+                  {:url          (format "%s/%s/_delete_by_query?refresh&wait_for_completion=true"
+                                         es-host indices)
+                   :method       :post
+                   :body         (cheshire/encode {:query {:match_all {}}})
+                   :headers {"Content-Type" "application/json; charset=UTF-8"}})]
+      (if (or (seq (:failures resp)) (not= 200 (:status resp)))
+        (log/errorf "Failed to delete all docs: %s" resp)
+        (log/infof "Deleted all documents from indices '%s'." indices)))))
 
 (defn export-docs-for-bulk-via-http
   "Example: (export-docs-for-bulk \"http://127.0.0.1:9200\" \"index\" {:query {:match_all {}} :size 1000} \"output.json\")"
