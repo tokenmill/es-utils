@@ -1,4 +1,4 @@
-(defproject lt.tokenmill/es-utils "0.1.1"
+(defproject lt.tokenmill/es-utils "0.1.2"
   :description "Utilities for Elasticsearch"
 
   :dependencies [[http-kit "2.3.0"]
