@@ -3,7 +3,8 @@
             [clojure.java.io :as io]
             [clojure.string :as str]
             [cheshire.core :as cheshire]
-            [org.httpkit.client :as http]))
+            [org.httpkit.client :as http])
+  (:import (java.io File)))
 
 (defn es-ready? [es-host]
   (loop [{:keys [status]} @(http/request {:url es-host})
@@ -23,22 +24,29 @@
       :method  :put
       :headers {"Content-Type" "application/json"}}))
 
+(defn as-input-stream
+  "Given a path returns an input-stream"
+  [index-config]
+  (cond
+    (string? index-config) (io/input-stream (io/resource index-config))
+    (instance? File index-config) (io/input-stream index-config)))
+
 (defn create-index [es-host index-name index-config]
   @(http/request
      {:url     (format "%s/%s" es-host index-name)
       :method  :put
       :headers {"Content-Type" "application/json"}
-      :body    (io/input-stream (io/resource index-config))}))
+      :body    (as-input-stream index-config)}))
 
 (defn data->index-name [data-file]
-  (-> data-file (io/resource) (io/reader) (line-seq) (first) (cheshire/decode true) :index :_index))
+  (-> data-file (as-input-stream) (io/reader) (line-seq) (first) (cheshire/decode true) :index :_index))
 
 (defn import-test-data-to-es [es-host es-index-name input-file]
   (let [resp (-> @(http/request
                     {:url     (format "%s/_bulk" es-host)
                      :method  :post
                      :headers {"Content-Type" "application/x-ndjson"}
-                     :body    (io/input-stream (io/resource input-file))})
+                     :body    (as-input-stream input-file)})
                  :body
                  (cheshire/decode))]
     (log/infof "Data upload from file '%s' had errors '%s' for items count '%s'"
