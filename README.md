@@ -1,6 +1,7 @@
 <a href="http://www.tokenmill.lt">
       <img src=".github/tokenmill-logo.svg" width="125" height="125" align="right" />
 </a>
+
 # es-utils
 
 Helper functions for Elasticsearch.
